@@ -275,7 +275,9 @@ class ProcessoDAO {
         $result=false;
         try {
             $sql= '   SELECT p.idprocesso,p.idprocessotipo,p.idetapa,p.idusuario,p.numero, p.dtescolhida, p.obsposse, p.dtposse1, p.dtposse2, p.dtposse3,p.dtprazo,
-                e.msgadd,e.msgcapa,e.escolhedata, p.nomepresidentecee as nomepresidentecee, p.nomesecretariocee as nomesecretariocee,
+                e.msgadd,e.msgcapa,e.escolhedata, 
+                p.nomepresidentecee as nomepresidentecee, 
+                p.nomesecretariocee as nomesecretariocee,
                 
                 t.nome as nometipo,
                 e.nome as nomeetapa, e.ordem as ordemetapa,
@@ -307,7 +309,92 @@ class ProcessoDAO {
 
     }
    
+    public function insert(Processo $Processo) {
+        $inseriu=true;
+        $this->conn->beginTransaction();
+        try {
+            $query = $this->conn->prepare(
+                'INSERT INTO processo
+                 (  idprocesso, idusuario, idprocessotipo, idetapa,
+                    numero, dtcriacao, dtescolhida,modo,militar,nomepresidentecee, nomesecretariocee,
+                    flag) 
+                 VALUES (?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?)'
+            );
+
+            $query->bindValue(1, NULL, PDO::PARAM_INT);//idprocesso é AUTO_INCREMENT, então NULL
+            $query->bindValue(2, $Processo->getUsuario(), PDO::PARAM_INT);
+            $query->bindValue(3, $Processo->getProcessoTipo(), PDO::PARAM_INT);
+            $query->bindValue(4, $Processo->getEtapa(), PDO::PARAM_INT);
+            $query->bindValue(5, $Processo->getNumero(), PDO::PARAM_STR);
+            $query->bindValue(6, $Processo->getDtEscolhida(), PDO::PARAM_INT);
+            $query->bindValue(7, $Processo->getModo(), PDO::PARAM_INT);
+            $query->bindValue(8, $Processo->getMilitar(), PDO::PARAM_INT);
+            $query->bindValue(9, $Processo->getNomePresidenteCEE(), PDO::PARAM_STR);
+            $query->bindValue(10, $Processo->getNomeSecretarioCEE(), PDO::PARAM_STR);
+            $query->bindValue(11, APP_FLAG_ACTIVE, PDO::PARAM_INT);//flag ativo
+
+            $query->execute();
+            $inseriu = $this->conn->lastInsertId();
+            $this->conn->commit();
+        }
+        catch(Exception $e) {
+            $this->conn->rollback();
+            if(APP_SHOW_SQL_ERRORS){
+                echo var_dump($this).'<hr>'.$e->getMessage();exit();
+            }
+            $inseriu=false;
+        }
+        return $inseriu;
+    }
+ 
+ public function update(Processo $Processo) {
+        $atualizou = true; 
+        $this->conn->beginTransaction(); 
     
+        try {
+            $query = $this->conn->prepare(
+                'UPDATE processo SET 
+                    dtatualizacao = NOW(), 
+                    idusuario = ?, 
+                    idprocessotipo = ?, 
+                    idetapa = ?, 
+                    dtescolhida = ?, 
+                    dtprazo = ?, 
+                    dtfim = ?, 
+                    dtaviso = ?, 
+                    nomepresidentecee = ?, 
+                    nomesecretariocee = ? 
+                WHERE idprocesso = ?'
+            );
+    
+            // Bind dos parâmetros
+            $query->bindValue(1, $Processo->getUsuario(), PDO::PARAM_INT);
+            $query->bindValue(2, $Processo->getProcessoTipo(), PDO::PARAM_INT);
+            $query->bindValue(3, $Processo->getEtapa(), PDO::PARAM_INT);
+            $query->bindValue(4, $Processo->getDtEscolhida(), PDO::PARAM_STR);
+            $query->bindValue(5, $Processo->getPrazo(), PDO::PARAM_STR);
+            $query->bindValue(6, $Processo->getDtFim(), PDO::PARAM_STR);
+            $query->bindValue(7, $Processo->getDtAviso(), PDO::PARAM_STR);
+            $query->bindValue(8, $Processo->getNomePresidenteCEE(), PDO::PARAM_STR); // Presidente
+            $query->bindValue(9, $Processo->getNomeSecretarioCEE(), PDO::PARAM_STR); // Secretário
+            $query->bindValue(10, $Processo->getId(), PDO::PARAM_INT);
+    
+            $query->execute();
+            $this->conn->commit();
+        } catch (Exception $e) {
+            $this->conn->rollback();
+            error_log('Erro ao atualizar processo: ' . $e->getMessage());
+            $atualizou = false;
+    
+            if (APP_SHOW_SQL_ERRORS) {
+                echo var_dump($this) . '<hr>' . $e->getMessage();
+                // exit();
+            }
+        }
+    
+        return $atualizou;
+    }
+
     //retorna processos com DTFIM mas sem DTAVISO
     public function getDtFimSemDtAviso(){
         $result=false;
@@ -497,93 +584,9 @@ class ProcessoDAO {
 
     }
 
-    public function insert(Processo $Processo) {
-        $inseriu=true;
-        $this->conn->beginTransaction();
-        try {
-            $query = $this->conn->prepare(
-                'INSERT INTO processo
-                 (  idprocesso, idusuario, idprocessotipo, idetapa,
-                    numero, dtcriacao, dtescolhida,modo,militar,nomepresidentecee, nomesecretariocee,
-                    flag) 
-                 VALUES (?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?)'
-            );
+   
 
-            $query->bindValue(1, NULL, PDO::PARAM_INT);//idprocesso é AUTO_INCREMENT, então NULL
-            $query->bindValue(2, $Processo->getUsuario(), PDO::PARAM_INT);
-            $query->bindValue(3, $Processo->getProcessoTipo(), PDO::PARAM_INT);
-            $query->bindValue(4, $Processo->getEtapa(), PDO::PARAM_INT);
-            $query->bindValue(5, $Processo->getNumero(), PDO::PARAM_STR);
-            $query->bindValue(6, $Processo->getDtEscolhida(), PDO::PARAM_INT);
-            $query->bindValue(7, $Processo->getModo(), PDO::PARAM_INT);
-            $query->bindValue(8, $Processo->getMilitar(), PDO::PARAM_INT);
-            $query->bindValue(9, $Processo->getNomePresidenteCEE(), PDO::PARAM_STR);
-            $query->bindValue(10, $Processo->getNomeSecretarioCEE(), PDO::PARAM_STR);
-            $query->bindValue(11, APP_FLAG_ACTIVE, PDO::PARAM_INT);//flag ativo
-
-            $query->execute();
-            $inseriu = $this->conn->lastInsertId();
-            $this->conn->commit();
-        }
-        catch(Exception $e) {
-            $this->conn->rollback();
-            if(APP_SHOW_SQL_ERRORS){
-                echo var_dump($this).'<hr>'.$e->getMessage();exit();
-            }
-            $inseriu=false;
-        }
-        return $inseriu;
-    }
-
-    public function update(Processo $Processo) {
-        $atualizou = true; 
-        $this->conn->beginTransaction(); 
-    
-        try {
-            $query = $this->conn->prepare(
-                'UPDATE processo SET 
-                    dtatualizacao = NOW(), 
-                    idusuario = ?, 
-                    idprocessotipo = ?, 
-                    idetapa = ?, 
-                    dtescolhida = ?, 
-                    dtprazo = ?, 
-                    dtfim = ?, 
-                    dtaviso = ?, 
-                    nomepresidentecee = ?, 
-                    nomesecretariocee = ? 
-                WHERE idprocesso = ?'
-            );
-    
-            // Bind dos parâmetros
-            $query->bindValue(1, $Processo->getUsuario(), PDO::PARAM_INT);
-            $query->bindValue(2, $Processo->getProcessoTipo(), PDO::PARAM_INT);
-            $query->bindValue(3, $Processo->getEtapa(), PDO::PARAM_INT);
-            $query->bindValue(4, $Processo->getDtEscolhida(), PDO::PARAM_STR);
-            $query->bindValue(5, $Processo->getPrazo(), PDO::PARAM_STR);
-            $query->bindValue(6, $Processo->getDtFim(), PDO::PARAM_STR);
-            $query->bindValue(7, $Processo->getDtAviso(), PDO::PARAM_STR);
-            $query->bindValue(8, trim($Processo->getNomePresidenteCEE()), PDO::PARAM_STR); // Remove espaços extras
-            $query->bindValue(9, trim($Processo->getNomeSecretarioCEE()), PDO::PARAM_STR); // Remove espaços extras
-            $query->bindValue(10, $Processo->getId(), PDO::PARAM_INT);
-    
-            $query->execute();
-            $this->conn->commit();
-        } catch (Exception $e) {
-            $this->conn->rollback();
-            error_log('Erro ao atualizar processo: ' . $e->getMessage());
-            $atualizou = false;
-    
-            if (APP_SHOW_SQL_ERRORS) {
-                echo var_dump($this) . '<hr>' . $e->getMessage();
-                exit();
-            }
-        }
-    
-        return $atualizou;
-    }
-    
-    
+   
        
     
 
@@ -639,31 +642,59 @@ class ProcessoDAO {
         return $atualizou;
     }
 
-    // public function updatePresidente(Processo $Processo) {
-    //     $atualizou=true;
-    //     $this->conn->beginTransaction();
-    //     try {
-
-    //         $query = $this->conn->prepare(
-    //             '   UPDATE presidentecee SET 
-    //                 idpresidentecee = ?, idusuario = ?
-    //                 WHERE idprocesso = ?');
-
-    //         $query->bindValue(1, $Processo->getMilitar(), PDO::PARAM_INT);
-    //         $query->bindValue(2, $Processo->getId(), PDO::PARAM_INT);
-
-    //         $query->execute();
-    //         $this->conn->commit();
-    //     }
-    //     catch(Exception $e) {
-    //         $this->conn->rollback();
-    //         if(APP_SHOW_SQL_ERRORS){
-    //             echo var_dump($this).'<hr>'.$e->getMessage();exit();
-    //         }
-    //         $atualizou=false;
-    //     }
-    //     return $atualizou;
-    // }
+    public function setNomePresidenteCEE(Processo $Processo) {
+        $atualizou = true;
+        error_log("Iniciando setNomePresidenteCEE para Processo: $Processo com nome: $nomepresidentecee");
+    
+        try {
+            $query = $this->conn->prepare(
+                'UPDATE processo SET nomepresidentecee = ? WHERE idprocesso = ?'
+            );
+            $query->bindValue(1, trim($nomepresidentecee), PDO::PARAM_STR);
+            $query->bindValue(2, $Processo, PDO::PARAM_INT);
+            $query->execute();
+            error_log("Atualização do nome do presidente concluída para Processo: $Processo");
+        } catch (Exception $e) {
+            error_log('Erro ao atualizar nome do presidente CEE: ' . $e->getMessage());
+            $atualizou = false;
+            if (APP_SHOW_SQL_ERRORS) {
+                echo var_dump($this) . '<hr>' . $e->getMessage();
+                exit();
+            }
+        }
+    
+        return $atualizou;
+    }
+    
+    
+    public function setNomeSecretarioCEE(Processo $Processo) {
+        $atualizou = true;
+        
+        try {
+            // Prepara a consulta SQL
+            $query = $this->conn->prepare(
+                'UPDATE processo SET nomesecretariocee = ? WHERE idprocesso = ?'
+            );
+    
+            // Bind dos parâmetros
+            $query->bindValue(1, trim($nomesecretariocee), PDO::PARAM_STR); // Remove espaços extras
+            $query->bindValue(2, $Processo, PDO::PARAM_INT);
+    
+            // Executa a consulta
+            $query->execute();
+        } catch (Exception $e) {
+            error_log('Erro ao atualizar nome do secretário CEE: ' . $e->getMessage());
+            $atualizou = false;
+            
+            if (APP_SHOW_SQL_ERRORS) {
+                echo var_dump($this) . '<hr>' . $e->getMessage();
+                exit();
+            }
+        }
+    
+        return $atualizou;
+    }
+    
 
     public function updateDtEscolhida(Processo $Processo) {
         $atualizou=true;
