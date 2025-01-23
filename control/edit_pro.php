@@ -1,4 +1,7 @@
 <?php
+
+
+
 require_once("../config.php");
 require_once("../bin/errors.php");
 require_once("../bin/functions.php");
@@ -28,7 +31,7 @@ require_once("../dao/DocumentoDAO.php");
 require_once("../dao/EtapaDAO.php");
 require_once("../dao/ResponsavelDAO.php");
 //carrega Model
-require_once('../model/Processo.php');
+require_once("../model/Processo.php");
 require_once("../model/Historico.php");
 require_once("../model/Documento.php");
 require_once("../model/Etapa.php");
@@ -41,25 +44,41 @@ $Processo->setId($idprocesso);
 // Instanciar o DAO e retornar infos da base
 $ProcessoDAO = new ProcessoDAO();
 $infosprocesso = $ProcessoDAO->getInfosCapa($Processo);
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Verifica se o método de requisição é POST
 
-	
-    // Captura os valores do formulário
-    $nomepresidentecee = isset($_POST['nomepresidentecee']) ? trim($_POST['nomepresidentecee']) : null;
-    $nomesecretariocee = isset($_POST['nomesecretariocee']) ? trim($_POST['nomesecretariocee']) : null;
+// Supondo que você já tenha incluído o código para autoload ou requerido a classe Processo e ProcessoDAO
+// if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+//     // Recupera os dados do formulário
+//     $idprocesso = isset($_POST['id']) ? $_POST['id'] : null;
+//     $nomepresidentecee = isset($_POST['nomepresidentecee']) ? trim($_POST['nomepresidentecee']) : null;
+//     $nomesecretariocee = isset($_POST['nomesecretariocee']) ? trim($_POST['nomesecretariocee']) : null;
 
-    // Atualiza os valores no objeto Processo
-    $Processo->setNomePresidenteCEE($nomepresidentecee);
-    $Processo->setNomeSecretarioCEE($nomesecretariocee);
+//     // Verifica se os valores de presidente e secretário foram informados
+//     if ($nomepresidentecee !== null && $nomesecretariocee !== null) {
+//         // Instancia o objeto Processo
+//         $Processo = new Processo();
+//         $Processo->setId($idprocesso);
+//         $Processo->setNomePresidenteCEE($nomepresidentecee);
+//         $Processo->setNomeSecretarioCEE($nomesecretariocee);
 
-    // Atualiza no banco de dados
-    if ($ProcessoDAO->update($Processo)) {
-        echo "Dados atualizados com sucesso!";
-    } else {
-        echo "Erro ao atualizar os dados.";
-    }
-}
+//         // Instancia o DAO e chama o método para atualizar o processo
+//         $ProcessoDAO = new ProcessoDAO();
+//         if ($ProcessoDAO->update($Processo)) {
+//             // Se a atualização for bem-sucedida, exibe uma mensagem de sucesso
+//             echo "Processo atualizado com sucesso!";
+//         } else {
+//             // Caso contrário, exibe uma mensagem de erro
+//             echo "Erro ao atualizar o processo.";
+//         }
+//     } else {
+//         echo "Por favor, preencha todos os campos.";
+//     }
+// }
 
+
+
+
+// Resto do código do formulário
 // Instanciar DAO responsáveis e retornar infos
 $ResponsavelDAO = new ResponsavelDAO();
 $responsaveis = $ResponsavelDAO->getAllFrom($idprocesso);
@@ -90,6 +109,11 @@ if( !empty($_POST) && isset($_POST) ){
 	$posse=				validaInteiro($_POST["posse"],	1);
 	$militar=			validaInteiro($_POST["militar"],		PROCESSO_MILITAR_SIZE);
 	$modo=				validaInteiro($_POST["modo"],			ETAPA_MODO_SIZE);
+	
+
+	// Validação obrigatória dos campos nomepresidentecee e nomesecretariocee
+    $nomepresidentecee = isset($_POST["nomepresidentecee"]) ? trim($_POST["nomepresidentecee"]) : '';
+    $nomesecretariocee = isset($_POST["nomesecretariocee"]) ? trim($_POST["nomesecretariocee"]) : '';
 	
 	//se os dados obrigatórios passarem na validação: (IF Nº2)
 	if( $processotipo!==false && $etapa!==false && $usuario!==false && $posse!==false && $posse!==false && $modo!==false){
@@ -396,9 +420,16 @@ if( !empty($_POST) && isset($_POST) ){
 				$Historico->setObs(sqlTrataString($obs_log));
 				$HistoricoDAO = new HistoricoDAO();
 				$inseriuLog=$HistoricoDAO->insert($Historico);
+
+				//arquivo de backend que pega os dados do nome do presidente cee e secretario da cee via POST e valida esses dados
+				// foi inserido aqui para não interferir no histórico atualizado 2025//
+				require_once("../control/edit_presidente_e_secretario.php");
+
 				//se cair aqui é pq DEU TUDO CERTO!
 				if($inseriuLog){
+					
 					enviaMsg("sucesso","Processo atualizado com sucesso");
+					
 					echo "<meta http-equiv=\"refresh\" content=\"0; url=index_doc.php?p=$idprocesso\">";
 					exit();
 				//se cair aqui é pq não inseriu o log					
@@ -749,15 +780,15 @@ if(isset($_GET["r"]) && !empty($_GET["r"]) && $_GET["r"] == "index_doc.php"){
 				</div>
             </div>
 
-
-			<form action="edit_pro.php" method="POST" class="form-horizontal">
-    <input type="hidden" name="id" value="<?= htmlspecialchars($idprocesso, ENT_QUOTES, 'UTF-8'); ?>">
+			<form action="edit_presidente_e_secretario.php" method="POST" class="form-horizontal">
+    <input type="hidden" name="idprocesso" value="<?= htmlspecialchars($idprocesso, ENT_QUOTES, 'UTF-8'); ?>">
 
     <div class="form-group well" id="presidente-container">
         <label for="nomepresidentecee"><strong>Nome do Presidente da CEE:</strong></label>
         <input type="text" name="nomepresidentecee" id="nomepresidentecee" class="form-control" 
                placeholder="Digite o Nome do(a) Presidente da CEE"
-               value="<?php echo htmlspecialchars(isset($infosprocesso['nomepresidentecee']) && $infosprocesso['nomepresidentecee'] !== '' 
+               value="<?php echo htmlspecialchars(
+                   isset($infosprocesso['nomepresidentecee']) && $infosprocesso['nomepresidentecee'] !== '' 
                    ? $infosprocesso['nomepresidentecee'] 
                    : 'nome.presidente', ENT_QUOTES, 'UTF-8'); ?>">
     </div>
@@ -766,12 +797,16 @@ if(isset($_GET["r"]) && !empty($_GET["r"]) && $_GET["r"] == "index_doc.php"){
         <label for="nomesecretariocee"><strong>Nome do Secretário da CEE:</strong></label>
         <input type="text" name="nomesecretariocee" id="nomesecretariocee" class="form-control" 
                placeholder="Digite o Nome do(a) Secretário(a) da CEE"
-               value="<?php echo htmlspecialchars(isset($infosprocesso['nomesecretariocee']) && $infosprocesso['nomesecretariocee'] !== '' 
+               value="<?php echo htmlspecialchars(
+                   isset($infosprocesso['nomesecretariocee']) && $infosprocesso['nomesecretariocee'] !== '' 
                    ? $infosprocesso['nomesecretariocee'] 
                    : 'nome.secretario', ENT_QUOTES, 'UTF-8'); ?>">
     </div>
 
-   
+   <style> .form-horizontal {
+    max-width: 800px; /* Define a largura desejada */
+    width: 100%; /* Para manter a responsividade */
+} </style>
 
 
             <div class="form-group" style="margin-top:40px;">
