@@ -71,8 +71,9 @@ if(!empty($_REQUEST["p"])){
   // define infos no objeto Processo
   $Processo->setMilitar($infosprocesso["militar"]);
   $Processo->setModo($infosprocesso["modo"]);
-  $Processo->setNomePresidenteCEE($infosprocesso["nomepresidentecee"]);
-  $Processo->setNomeSecretarioCEE($infosprocesso["nomesecretariocee"]);
+  
+  
+
   //se não encontrar informações da capa, é pq o processo foi removido ou o link está incorreto
   if(!$infosprocesso){
     enviaMsg("erro","Acesso negado","Sem permissão de acesso, link quebrado ou os dados estão inválidos");
@@ -1327,8 +1328,33 @@ if(!empty($_REQUEST["p"])){
             echo '<br><strong>Cidade</strong>: '.$infosprocesso["nomecidade"];
             echo '<br><strong>Subseção</strong>: '.$infosprocesso["nomesubsecao"].' - '.$infosprocesso["nomecidadesubsecao"];
             echo '<br><strong>Nome do Responsável</strong>: '.$infosprocesso["nomeresponsavel"];
-            echo '<br><strong>Presidente da CEE</strong>: '.$infosprocesso["nomepresidentecee"];
-            echo '<br><strong>Secretário(a) da CEE</strong>: '.$infosprocesso["nomesecretariocee"];
+            // echo '<br><strong>Presidente da CEE</strong>: '.$infosprocesso["nomepresidentecee"];
+            // echo '<br><strong>Secretário(a) da CEE</strong>: '.$infosprocesso["nomesecretariocee"];   
+            
+              // Verifica se os valores de presidente e secretário são nulos e exibe o nome padrão se for o caso
+              $nomePresidente = isset($infosprocesso["nomepresidentecee"]) && $infosprocesso["nomepresidentecee"] ? $infosprocesso["nomepresidentecee"] : " ";
+              $nomeSecretario = isset($infosprocesso["nomesecretariocee"]) && $infosprocesso["nomesecretariocee"] ? $infosprocesso["nomesecretariocee"] : " ";
+              
+
+              //Se o valor do campo presidente da cee for nulo não é listado na página, caso contrário será , atualizado 2025 thiago
+              if(!isset($infosprocesso["nomepresidentecee"])){
+                
+                }
+                else{
+                  echo '<br><strong>Presidente da CEE</strong>: '.$nomePresidente;
+                }
+              //Se o valor do campo secretário da cee for nulo não é listado na página, caso contrário será , atualizado 2025 thiago
+
+              if(!isset($infosprocesso["nomesecretariocee"])){
+              }
+              else{
+                echo '<br><strong>Secretário(a) da CEE</strong>: '.$nomeSecretario;
+
+              }
+
+             
+
+
             echo '<br><strong>Login</strong>: ';
             //se o usuário tiver permissão para editar usuários permite ir para edição
             if(verificaFuncaoUsuario(FUNCAO_USUARIO_EDIT)){
