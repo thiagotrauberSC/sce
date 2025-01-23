@@ -1,9 +1,9 @@
 <?php
 
+
 // Verificar se o formulário foi enviado
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Conectar ao banco de dados
-    require_once("../conexao.php");
 
     echo "Formulário recebido!";
 
@@ -59,8 +59,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->execute();
 
         // Redirecionar ou mostrar uma mensagem de sucesso
-        header('Location: edit_pro.php?p=' . $idprocesso . '&r=index_doc');
-        exit();
+        enviaMsg("sucesso","Processo atualizado com sucesso");
+					
+					echo "<meta http-equiv=\"refresh\" content=\"0; url=index_doc.php?p=$idprocesso\">";
+					exit();
 
     } catch (Exception $e) {
         echo "Erro: " . $e->getMessage();
